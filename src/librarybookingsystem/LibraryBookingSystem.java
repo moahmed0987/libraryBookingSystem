@@ -3,6 +3,9 @@ package librarybookingsystem;
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import static java.time.temporal.ChronoUnit.DAYS;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -12,8 +15,19 @@ public class LibraryBookingSystem {
     // change to read/write to text file
     static ArrayList<Books> listOfBooks = new ArrayList();
     static ArrayList<Borrowers> listOfBorrowers = new ArrayList();
+    static DateTimeFormatter dt = DateTimeFormatter.ofPattern("dd/MM/YYYY");
 
     public static void main(String[] args) {
+        Borrowers testBorrower = new Borrowers("testBorrower", "242362");
+        Books testBook = new Books("testBook", testBorrower, "145346", LocalDate.of(2020, 01, 01));
+        listOfBooks.add(testBook);
+        
+        Borrowers testBorrowerToday = new Borrowers("testBorrowerToday", "352");
+        Books testBookToday = new Books("testBookToday", testBorrowerToday, "534634", LocalDate.now());
+        listOfBooks.add(testBookToday);
+        
+        // login to system as "admin" -- extend person class        
+        
         while (true) {
             menu();
         }
@@ -36,6 +50,7 @@ public class LibraryBookingSystem {
         System.out.println("VIEWLOANED - Display books being loaned only.");
         System.out.println("VIEWBOOKS - Display all books and their details.");
         System.out.println("VIEWNAMES - Display all borrowers' names.");
+        System.out.println("VIEWDUETODAY - Display all books that are due to be returned today.");
         System.out.println("VIEWLATE - Display all books that are overdue to be returned.");
 
         String choice = input.next();
@@ -120,10 +135,10 @@ public class LibraryBookingSystem {
                     emptyConsole("No books have been borrowed.");
                 } else {
                     emptyConsole(null);
-                    System.out.format("%20s : %20s", "Book name", "Borrower");
+                    System.out.format("%20s : %20s : %20s", "Book name", "Borrower", "Return date");
                     System.out.println();
                     for (Books book : booksBorrowed) {
-                        System.out.format("%20s : %20s", book.getName(), book.getCurrentBorrower().getName());
+                        System.out.format("%20s : %20s : %20s", book.getName(), book.getCurrentBorrower().getName(), book.getReturnDate().format(dt));
                         System.out.println();
                     }
                 }
@@ -151,8 +166,45 @@ public class LibraryBookingSystem {
                 }
                 break;
             }
+            case "VIEWDUETODAY": {
+                ArrayList<Books> booksDue = new ArrayList<>();
+                for (Books book : listOfBooks) {
+                    if (DAYS.between(book.getReturnDate(), LocalDate.now()) == 0) {
+                        booksDue.add(book);
+                    }
+                }
+                if (booksDue.isEmpty()) {
+                    emptyConsole("No books are due today.");
+                } else {
+                    emptyConsole(null);
+                    System.out.format("%20s : %20s : %20s", "Book name", "Borrower", "Return date");
+                    System.out.println();
+                    for (Books book : booksDue) {
+                        System.out.format("%20s : %20s : %20s", book.getName(), book.getCurrentBorrower().getName(), book.getReturnDate().format(dt));
+                        System.out.println();
+                    }
+                }
+                break;
+            }
             case "VIEWLATE": {
-                // list all books outstanding + output to text file
+                ArrayList<Books> booksLate = new ArrayList<>();
+                for (Books book : listOfBooks) {
+                    if (DAYS.between(book.getReturnDate(), LocalDate.now()) >= 1) {
+                        booksLate.add(book);
+                    }
+                }
+                if (booksLate.isEmpty()) {
+                    emptyConsole("No books are late.");
+                } else {
+                    emptyConsole(null);
+                    System.out.format("%20s : %20s : %20s : %20s", "Book name", "Borrower", "Return date", "Days overdue");
+                    System.out.println();
+                    for (Books book : booksLate) {
+                        System.out.format("%20s : %20s : %20s : %20s", book.getName(), book.getCurrentBorrower().getName(), book.getReturnDate().format(dt), DAYS.between(book.getReturnDate(), LocalDate.now()));
+                        System.out.println();
+                    }
+                }
+                break;
             }
         }
     }
@@ -284,7 +336,7 @@ public class LibraryBookingSystem {
 
         emptyConsole("Name changed from \"" + oldName + "\" to \"" + listOfBorrowers.get(indexOfBorrower).getName() + "\"");
     }
-    
+
     public static void editBorrowerPN() {
         Borrowers borrowerToEdit = null;
         while (true) {
@@ -426,10 +478,12 @@ public class LibraryBookingSystem {
             }
         }
 
+        bookToLoan.setReturnDate(LocalDate.now().plusWeeks(3));
+
         for (Books book : listOfBooks) {
             if (book.equals(bookToLoan)) {
                 book.setCurrentBorrower(borrowerLoaningBook);
-                emptyConsole(bookToLoan.getName() + " has been loaned to " + borrowerLoaningBook.getName() + ".");
+                emptyConsole(bookToLoan.getName() + " has been loaned to " + borrowerLoaningBook.getName() + " for 3 weeks.");
             }
         }
         for (Borrowers borrower : listOfBorrowers) {
