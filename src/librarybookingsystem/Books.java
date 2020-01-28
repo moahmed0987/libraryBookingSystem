@@ -1,8 +1,10 @@
 package librarybookingsystem;
 
+import java.io.Serializable;
 import java.time.LocalDate;
+import java.util.Comparator;
 
-public class Books {
+public class Books implements Serializable{
 
     private String name, ISBNNumber;
     private Borrowers currentBorrower;
@@ -14,6 +16,16 @@ public class Books {
         this.ISBNNumber = ISBNNumber;
         this.returnDate = returnDate;
     }
+    
+    public static Comparator<Books> bookNameComparator = new Comparator<Books>() {
+
+        
+	public int compare(Books b1, Books b2) {
+	   String bookName1 = b1.getName().toUpperCase();
+	   String bookName2 = b2.getName().toUpperCase();
+
+	   return bookName1.compareTo(bookName2);
+    }};
 
     public LocalDate getReturnDate() {
         return returnDate;

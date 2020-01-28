@@ -1,13 +1,22 @@
 package librarybookingsystem;
 
-import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import static java.time.temporal.ChronoUnit.DAYS;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class LibraryBookingSystem {
 
@@ -20,14 +29,15 @@ public class LibraryBookingSystem {
     public static void main(String[] args) {
         Borrowers testBorrower = new Borrowers("testBorrower", "242362");
         Books testBook = new Books("testBook", testBorrower, "145346", LocalDate.of(2020, 01, 01));
+        listOfBorrowers.add(testBorrower);
         listOfBooks.add(testBook);
-        
+
         Borrowers testBorrowerToday = new Borrowers("testBorrowerToday", "352");
         Books testBookToday = new Books("testBookToday", testBorrowerToday, "534634", LocalDate.now());
+        listOfBorrowers.add(testBorrowerToday);
         listOfBooks.add(testBookToday);
-        
+
         // login to system as "admin" -- extend person class        
-        
         while (true) {
             menu();
         }
@@ -48,8 +58,8 @@ public class LibraryBookingSystem {
         System.out.println("DELETEBORROWER - Delete a borrower from the system.");
         System.out.println();
         System.out.println("VIEWLOANED - Display books being loaned only.");
-        System.out.println("VIEWBOOKS - Display all books and their details.");
-        System.out.println("VIEWNAMES - Display all borrowers' names.");
+        System.out.println("VIEWBOOKS - Display all books in alphabetically with their details.");
+        System.out.println("VIEWNAMES - Display all borrowers' names alphabetically.");
         System.out.println("VIEWDUETODAY - Display all books that are due to be returned today.");
         System.out.println("VIEWLATE - Display all books that are overdue to be returned.");
 
@@ -93,7 +103,9 @@ public class LibraryBookingSystem {
                 break;
             case "NEWBORROWER": {
                 System.out.print("Borrower's name: ");
-                String name = input.next();
+                input.nextLine();
+                String name = input.nextLine();
+//                input.nextLine();
                 System.out.print("Borrower's phone number: ");
                 String phoneNumber = input.next();
                 Borrowers borrower = new Borrowers(name, phoneNumber);
@@ -146,6 +158,7 @@ public class LibraryBookingSystem {
             }
             case "VIEWBOOKS": {
                 emptyConsole(null);
+                Collections.sort(listOfBooks, Books.bookNameComparator);
                 System.out.format("%20s : %20s : %20s", "Book name", "Borrower", "ISBN Number");
                 System.out.println();
                 for (Books book : listOfBooks) {
@@ -161,6 +174,7 @@ public class LibraryBookingSystem {
             }
             case "VIEWNAMES": {
                 emptyConsole(null);
+                Collections.sort(listOfBorrowers, Borrowers.borrowerNameComparator);
                 for (Borrowers borrower : listOfBorrowers) {
                     System.out.println(borrower.getName());
                 }
@@ -205,6 +219,10 @@ public class LibraryBookingSystem {
                     }
                 }
                 break;
+            }
+            case "X": {
+                saveBooksArrayList();
+                getBooksArrayList();
             }
         }
     }
@@ -550,10 +568,10 @@ public class LibraryBookingSystem {
             //release
             robot.keyRelease(KeyEvent.VK_CONTROL);
             robot.keyRelease(KeyEvent.VK_L);
-        } catch (AWTException e) {
+        } catch (java.awt.AWTException e) {
         }
 
-        // wait 0.1 seconds before proceeding
+        // wait 0.1 seconds to prevent text being outputted from being cleared
         try {
             Thread.sleep(100);
         } catch (InterruptedException e) {
@@ -564,4 +582,87 @@ public class LibraryBookingSystem {
             System.out.println(textToOutput);
         }
     }
+
+//    private static ArrayList<Books> getBooksArrayList() {
+    private static void getBooksArrayList() {
+
+        ArrayList<Books> newBooks = new ArrayList<>();
+        ObjectInputStream in;
+        boolean cont = true;
+        while (cont) {
+            try {
+                in = new ObjectInputStream(new FileInputStream("Books.txt"));
+                Books b1 = (Books) in.readObject();
+                System.out.println("b1 = " + b1);
+                if (b1 != null) {
+                    newBooks.add(b1);
+                } else {
+                    cont = false;
+                }
+            } catch (IOException e) {
+                System.out.println("io exception");
+                System.out.println(e);
+            } catch (ClassNotFoundException ex) {
+                System.out.println("class not found exception");
+            }
+        }
+
+//        while (line != null) {
+//            newBooks.add(line);
+//            line = reader.readLine();
+//        }
+//
+//        try {
+//            ObjectInputStream input = new ObjectInputStream(new FileInputStream("Books.txt"));
+//            try {
+//                Books book1 = (Books) input.read();
+//                System.out.println(book1.getCurrentBorrower());
+//
+//            } catch (ClassNotFoundException e) {
+//            }
+//
+//            reader = new BufferedReader(new FileReader("Books.txt"));
+//            String line = reader.readLine();
+//
+//            while (line != null) {
+//                newBooks.add(line);
+//                line = reader.readLine();
+//
+//            }
+//            for (Books book : listOfBooks) {
+//                reader.close();
+//            }
+//
+//        } catch (IOException e) {
+//            System.out.println("Error: File not found");
+//            System.out.println("Do you wish to create a new file? (Y/N)");
+//            while (true) {
+//                String choice = input.next().toUpperCase();
+//                if (choice.equals("Y")) {
+////                    createFile();
+//                    break;
+//                } else if (choice.equals("N")) {
+//                    return newBooks;
+//                } else {
+//                    System.out.println("Error, enter either Y or N.");
+//                }
+//            }
+//        }
+        System.out.println("newBooks = " + newBooks);
+//        return newBooks;
+    }
+
+    private static void saveBooksArrayList() {
+        ObjectOutputStream output;
+        try {
+            output = new ObjectOutputStream(new FileOutputStream("Books.txt"));
+            for (Books book : listOfBooks) {
+                output.writeObject(book);
+            }
+        } catch (IOException e) {
+            System.out.println(e);
+            System.out.println("file not found.");
+        }
+    }
+
 }
