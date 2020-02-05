@@ -4,15 +4,19 @@ import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import static java.time.temporal.ChronoUnit.DAYS;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -583,86 +587,45 @@ public class LibraryBookingSystem {
         }
     }
 
-//    private static ArrayList<Books> getBooksArrayList() {
     private static void getBooksArrayList() {
-
         ArrayList<Books> newBooks = new ArrayList<>();
-        ObjectInputStream in;
-        boolean cont = true;
-        while (cont) {
-            try {
-                in = new ObjectInputStream(new FileInputStream("Books.txt"));
-                Books b1 = (Books) in.readObject();
-                System.out.println("b1 = " + b1);
-                if (b1 != null) {
-                    newBooks.add(b1);
-                } else {
-                    cont = false;
-                }
-            } catch (IOException e) {
-                System.out.println("io exception");
-                System.out.println(e);
-            } catch (ClassNotFoundException ex) {
-                System.out.println("class not found exception");
+        ArrayList<ArrayList<String>> booksAsString = new ArrayList<>();
+        try {
+            BufferedReader br = new BufferedReader(new FileReader("Books.txt"));
+            String bookDetails;
+            while ((bookDetails = br.readLine()) != null) {
+                bookDetails = bookDetails.substring(1, (bookDetails.length() - 1)); // remove brackets
+                ArrayList<String> bookAsList = new ArrayList(Arrays.asList(bookDetails.split(", ")));
+                booksAsString.add(bookAsList);
             }
+        } catch (FileNotFoundException e) {
+            System.out.println("file not found exception");
+        } catch (IOException e) {
+            System.out.println("io exception");
         }
-
-//        while (line != null) {
-//            newBooks.add(line);
-//            line = reader.readLine();
-//        }
-//
-//        try {
-//            ObjectInputStream input = new ObjectInputStream(new FileInputStream("Books.txt"));
-//            try {
-//                Books book1 = (Books) input.read();
-//                System.out.println(book1.getCurrentBorrower());
-//
-//            } catch (ClassNotFoundException e) {
-//            }
-//
-//            reader = new BufferedReader(new FileReader("Books.txt"));
-//            String line = reader.readLine();
-//
-//            while (line != null) {
-//                newBooks.add(line);
-//                line = reader.readLine();
-//
-//            }
-//            for (Books book : listOfBooks) {
-//                reader.close();
-//            }
-//
-//        } catch (IOException e) {
-//            System.out.println("Error: File not found");
-//            System.out.println("Do you wish to create a new file? (Y/N)");
-//            while (true) {
-//                String choice = input.next().toUpperCase();
-//                if (choice.equals("Y")) {
-////                    createFile();
-//                    break;
-//                } else if (choice.equals("N")) {
-//                    return newBooks;
-//                } else {
-//                    System.out.println("Error, enter either Y or N.");
-//                }
-//            }
-//        }
-        System.out.println("newBooks = " + newBooks);
-//        return newBooks;
     }
 
     private static void saveBooksArrayList() {
-        ObjectOutputStream output;
         try {
-            output = new ObjectOutputStream(new FileOutputStream("Books.txt"));
+            FileWriter fw = new FileWriter("Books.txt"); // open to overwrite
+            fw.write(""); // clear the file
+            fw = new FileWriter("Books.txt", true); // open to append
             for (Books book : listOfBooks) {
-                output.writeObject(book);
+                ArrayList<String> temp = new ArrayList<>();
+                temp.add(book.getName());
+                temp.add(book.getISBNNumber());
+                temp.add(Long.toString(book.getCurrentBorrower().getIDNumber()));
+                temp.add(book.getReturnDate().toString());
+                fw.write(temp.toString() + "\n");
+                System.out.println("Adding: " + temp.toString() + " to \"Books.txt\" file.");
+//                        + "," + book.getISBNNumber() + "," + book.getCurrentBorrower());
             }
+            fw.close();
         } catch (IOException e) {
-            System.out.println(e);
-            System.out.println("file not found.");
+            e.printStackTrace();
+            //file not found, create file?
         }
+
     }
 
 }
